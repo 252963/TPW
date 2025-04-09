@@ -2,7 +2,7 @@
 using System.Windows;
 using TPW.Presentation;
 
-namespace TPW
+namespace Presentation.View
 {
     public class BallApp : Application
     {
