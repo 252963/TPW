@@ -1,37 +1,44 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Shapes;
-using TPW.Data;
+using TPW.Presentation.ViewModel;
 
-namespace TPW.Presentation
+namespace TPW.Presentation.View
 {
     public partial class MainWindow : Window
     {
+        private BallViewModel _viewModel;
+
         public MainWindow()
         {
             InitializeComponent();
+            this.Closed += MainWindow_Closed;
+        }
 
-            var balls = new List<Ball>
+        private void StartButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (int.TryParse(BallCountTextBox.Text, out int count) && count > 0)
             {
-                new Ball(100, 100),
-                new Ball(200, 150, 15, "Red")
-            };
+                _viewModel?.Dispose();
 
-            foreach (var ball in balls)
-            {
-                var ellipse = new Ellipse
+                _viewModel = new BallViewModel(count);
+                DataContext = _viewModel;
+
+                BallCanvas.Children.Clear();
+                foreach (var ellipse in _viewModel.Balls)
                 {
-                    Width = ball.Radius * 2,
-                    Height = ball.Radius * 2,
-                    Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(ball.Color))
-                };
-
-                Canvas.SetLeft(ellipse, ball.X - ball.Radius);
-                Canvas.SetTop(ellipse, ball.Y - ball.Radius);
-                BallCanvas.Children.Add(ellipse);
+                    BallCanvas.Children.Add(ellipse);
+                }
             }
+            else
+            {
+                MessageBox.Show("Wprowadź poprawną liczbę kulek (większą od zera).", "Błąd", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void MainWindow_Closed(object sender, EventArgs e)
+        {
+            _viewModel?.Dispose();
         }
     }
 }
