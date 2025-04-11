@@ -6,9 +6,7 @@ using System.Windows.Shapes;
 using System.Timers;
 using System.Windows;
 using TPW.Logic;
-
 using Timer = System.Timers.Timer;
-using TPW.Logic;
 using System.Windows.Controls;
 
 namespace TPW.Presentation.ViewModel
