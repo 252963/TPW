@@ -6,6 +6,7 @@ using System.Windows.Shapes;
 using System.Timers;
 using System.Windows;
 using TPW.Logic;
+using TPW.Data;
 using Timer = System.Timers.Timer;
 using System.Windows.Controls;
 
@@ -15,19 +16,20 @@ namespace TPW.Presentation.ViewModel
     {
         public ObservableCollection<Ellipse> Balls { get; private set; } = new();
 
-        private readonly List<object> _ballModels = new();
-        private readonly BallLogic _ballLogic;
+        private readonly List<IBall> _ballModels = new();
+        private readonly IBallLogic _ballLogic;
         private readonly Timer _timer;
         private readonly double _canvasWidth = 400;
         private readonly double _canvasHeight = 400;
 
-        public BallViewModel(int ballCount)
+        public BallViewModel(int ballCount, IBallLogic ballLogic)
         {
-            _ballLogic = new BallLogic(_canvasWidth, _canvasHeight);
+            _ballLogic = ballLogic;
+
             var balls = _ballLogic.CreateBalls(ballCount);
             _ballModels.AddRange(balls);
 
-            foreach (dynamic ball in balls)
+            foreach (var ball in balls)
             {
                 var ellipse = new Ellipse
                 {
@@ -53,7 +55,7 @@ namespace TPW.Presentation.ViewModel
             {
                 for (int i = 0; i < _ballModels.Count; i++)
                 {
-                    dynamic ball = _ballModels[i];
+                    var ball = _ballModels[i];
                     _ballLogic.MoveBall(ball);
 
                     Canvas.SetLeft(Balls[i], ball.X - ball.Radius);

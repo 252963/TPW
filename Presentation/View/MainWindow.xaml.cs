@@ -2,6 +2,8 @@
 using System.Windows;
 using System.Windows.Controls;
 using TPW.Presentation.ViewModel;
+using TPW.Logic;
+using TPW.Data;
 
 namespace TPW.Presentation.View
 {
@@ -21,7 +23,11 @@ namespace TPW.Presentation.View
             {
                 _viewModel?.Dispose();
 
-                _viewModel = new BallViewModel(count);
+                var factory = new BallFactory();
+                var width = BallCanvas.ActualWidth > 0 ? BallCanvas.ActualWidth : 400;
+                var height = BallCanvas.ActualHeight > 0 ? BallCanvas.ActualHeight : 400;
+                var logic = new BallLogic(width, height, factory);
+                _viewModel = new BallViewModel(count, logic);
                 DataContext = _viewModel;
 
                 BallCanvas.Children.Clear();
