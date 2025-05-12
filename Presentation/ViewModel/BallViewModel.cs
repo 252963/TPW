@@ -1,73 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Windows.Media;
-using System.Windows.Shapes;
-using System.Timers;
-using System.Windows;
-using TPW.Logic;
+﻿using System.Collections.ObjectModel;
 using TPW.Data;
-using Timer = System.Timers.Timer;
-using System.Windows.Controls;
+using TPW.Logic;
+using TPW.Presentation.Model;
 
 namespace TPW.Presentation.ViewModel
 {
-    public class BallViewModel : IDisposable
+    public class BallViewModel
     {
-        public ObservableCollection<Ellipse> Balls { get; private set; } = new();
+        public ObservableCollection<BallModel> Balls { get; private set; } = new();
 
-        private readonly List<IBall> _ballModels = new();
-        private readonly IBallLogic _ballLogic;
-        private readonly Timer _timer;
-        private readonly double _canvasWidth = 400;
-        private readonly double _canvasHeight = 400;
+        private readonly IBallLogic _logic;
 
-        public BallViewModel(int ballCount, IBallLogic ballLogic)
+        public BallViewModel(IBallLogic logic)
         {
-            _ballLogic = ballLogic;
-
-            var balls = _ballLogic.CreateBalls(ballCount);
-            _ballModels.AddRange(balls);
-
-            foreach (var ball in balls)
+            _logic = logic;
+            foreach (var ball in _logic.Balls)
             {
-                var ellipse = new Ellipse
+                Balls.Add(new BallModel
                 {
-                    Width = ball.Radius * 2,
-                    Height = ball.Radius * 2,
-                    Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(ball.Color))
-                };
-
-                Balls.Add(ellipse);
+                    X = ball.X,
+                    Y = ball.Y,
+                    Radius = ball.Radius,
+                    Color = ball.Color
+                });
             }
-
-            _timer = new Timer(30);
-            _timer.Elapsed += OnTimerElapsed;
-            _timer.Start();
         }
 
-        private void OnTimerElapsed(object sender, ElapsedEventArgs e)
+        public void Update(double deltaTime)
         {
-            if (Application.Current == null || Application.Current.Dispatcher.HasShutdownStarted)
-                return;
-
-            Application.Current.Dispatcher.Invoke(() =>
+            _logic.Update(deltaTime);
+            int index = 0;
+            foreach (var logicBall in _logic.Balls)
             {
-                for (int i = 0; i < _ballModels.Count; i++)
-                {
-                    var ball = _ballModels[i];
-                    _ballLogic.MoveBall(ball);
-
-                    Canvas.SetLeft(Balls[i], ball.X - ball.Radius);
-                    Canvas.SetTop(Balls[i], ball.Y - ball.Radius);
-                }
-            });
-        }
-
-        public void Dispose()
-        {
-            _timer?.Stop();
-            _timer?.Dispose();
+                Balls[index].X = logicBall.X;
+                Balls[index].Y = logicBall.Y;
+                index++;
+            }
         }
     }
 }

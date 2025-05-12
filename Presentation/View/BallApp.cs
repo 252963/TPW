@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows;
-using TPW.Presentation;
 
 namespace TPW.Presentation.View
 {

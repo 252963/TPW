@@ -1,23 +1,17 @@
 <Window x:Class="TPW.Presentation.View.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:vm="clr-namespace:TPW.Presentation.ViewModel"
-        mc:Ignorable="d"
-        Title="Ball Simulator" Height="450" Width="450">
+        Title="Ball Simulator" Height="600" Width="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
         <StackPanel Orientation="Horizontal" Margin="10">
-            <TextBlock Text="Liczba kulek:" VerticalAlignment="Center" Margin="0,0,5,0" />
-            <TextBox x:Name="BallCountTextBox" Width="50" Margin="0,0,10,0" />
-            <Button Content="Start" Click="StartButton_Click" />
+            <TextBlock Text="Liczba kulek:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+            <TextBox x:Name="BallCountTextBox" Width="50" Margin="0,0,5,0"/>
+            <Button Content="Start" Click="StartButton_Click"/>
         </StackPanel>
-
-        <Canvas x:Name="BallCanvas" Grid.Row="1" Background="White" />
+        <Canvas x:Name="BallCanvas" Grid.Row="1" Background="White"/>
     </Grid>
 </Window>
