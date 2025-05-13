@@ -1,10 +1,45 @@
-﻿namespace TPW.Presentation.Model
+﻿using System.ComponentModel;
+
+namespace TPW.Presentation.Model
 {
-    public class BallModel
+    public class BallModel : INotifyPropertyChanged
     {
-        public double X { get; set; }
-        public double Y { get; set; }
+        private double _x;
+        private double _y;
         public double Radius { get; set; }
         public string Color { get; set; }
+
+        public double X
+        {
+            get => _x;
+            set
+            {
+                if (_x != value)
+                {
+                    _x = value;
+                    OnPropertyChanged(nameof(X));
+                }
+            }
+        }
+
+        public double Y
+        {
+            get => _y;
+            set
+            {
+                if (_y != value)
+                {
+                    _y = value;
+                    OnPropertyChanged(nameof(Y));
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged(string name)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
     }
 }

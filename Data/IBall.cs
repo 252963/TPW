@@ -1,12 +1,24 @@
-﻿namespace TPW.Data
+﻿using System;
+
+namespace TPW.Data
 {
     public interface IBall
     {
-        double X { get; set; }
-        double Y { get; set; }
+        double X { get; }
+        double Y { get; }
         double Radius { get; }
         string Color { get; }
-        double VX { get; set; }
-        double VY { get; set; }
+        double VX { get; }
+        double VY { get; }
+
+        void Start();
+        void Stop();
+
+        (double x, double y) GetPosition();
+        (double vx, double vy) GetVelocity();
+        void SetVelocity(double vx, double vy);
+        void ShiftPosition(double dx, double dy);
+
+        event EventHandler? PositionChanged;
     }
 }

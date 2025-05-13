@@ -6,7 +6,8 @@ namespace TPW.Logic
     public interface IBallLogic
     {
         IEnumerable<IBall> Balls { get; }
-        void Update(double deltaTime);
         void CreateBalls(int count, double width, double height);
+        void Update();
+        void UpdateBounds(double width, double height);
     }
 }

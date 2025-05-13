@@ -1,58 +1,114 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using TPW.Data;
-using TPW.Logic;
-using Xunit;
 
-namespace UnitsTests
+namespace TPW.Logic
 {
-    public class FakeBall : IBall
+    public class BallLogic : IBallLogic
     {
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double Radius { get; set; } = 10;
-        public double VX { get; set; }
-        public double VY { get; set; }
-        public string Color { get; set; } = "Red";
-    }
+        private readonly List<IBall> _balls = new();
+        private readonly IBallFactory _factory;
+        private double _width;
+        private double _height;
 
-    public class FakeBallFactory : IBallFactory
-    {
-        public IBall Create(double x, double y, double radius, string color, double vx, double vy)
-            => new FakeBall { X = x, Y = y, Radius = radius, Color = color, VX = vx, VY = vy };
-    }
-
-    public class BallLogicTests
-    {
-        [Fact]
-        public void MoveBall_ShouldBounceHorizontally_WhenHitsLeftWall()
+        public BallLogic(IBallFactory factory)
         {
-            var ball = new FakeBall { X = 5, Y = 50, VX = -3, VY = 0, Radius = 10 };
-            var logic = new BallLogic(100, 100, new FakeBallFactory());
-
-            logic.MoveBall(ball);
-
-            Assert.True(ball.VX > 0);
+            _factory = factory;
         }
 
-        [Fact]
-        public void MoveBall_ShouldBounceVertically_WhenHitsTopWall()
+        public IEnumerable<IBall> Balls => _balls;
+
+        public void CreateBalls(int count, double width, double height)
         {
-            var ball = new FakeBall { X = 50, Y = 5, VX = 0, VY = -2, Radius = 10 };
-            var logic = new BallLogic(100, 100, new FakeBallFactory());
+            _width = width;
+            _height = height;
 
-            logic.MoveBall(ball);
+            var random = new Random();
 
-            Assert.True(ball.VY > 0);
+            for (int i = 0; i < count; i++)
+            {
+                double radius = 10;
+                var ball = _factory.Create(
+                    random.NextDouble() * (width - 2 * radius) + radius,
+                    random.NextDouble() * (height - 2 * radius) + radius,
+                    radius,
+                    "Red",
+                    random.NextDouble() * 200 - 100,
+                    random.NextDouble() * 200 - 100
+                );
+
+                _balls.Add(ball);
+            }
         }
 
-        [Fact]
-        public void CreateBalls_ShouldReturnCorrectNumberOfBalls()
+        public void Update()
         {
-            var logic = new BallLogic(200, 200, new FakeBallFactory());
+            HandleWallCollisions();
+            HandleBallCollisions();
+        }
 
-            List<IBall> balls = logic.CreateBalls(5);
+        private void HandleWallCollisions()
+        {
+            foreach (var ball in _balls)
+            {
+                var (x, y) = ball.GetPosition();
 
-            Assert.Equal(5, balls.Count);
+                if (x - ball.Radius <= 0 || x + ball.Radius >= _width)
+                {
+                    ball.SetVelocity(-ball.VX, ball.VY);
+                }
+
+                if (y - ball.Radius <= 0 || y + ball.Radius >= _height)
+                {
+                    ball.SetVelocity(ball.VX, -ball.VY);
+                }
+            }
+        }
+
+        private void HandleBallCollisions()
+        {
+            for (int i = 0; i < _balls.Count; i++)
+            {
+                for (int j = i + 1; j < _balls.Count; j++)
+                {
+                    var ballA = _balls[i];
+                    var ballB = _balls[j];
+
+                    var (ax, ay) = ballA.GetPosition();
+                    var (bx, by) = ballB.GetPosition();
+
+                    double dx = bx - ax;
+                    double dy = by - ay;
+                    double distanceSquared = dx * dx + dy * dy;
+                    double minDistance = ballA.Radius + ballB.Radius;
+
+                    if (distanceSquared < minDistance * minDistance)
+                    {
+                        double distance = Math.Sqrt(distanceSquared);
+                        if (distance == 0) continue;
+
+                        double nx = dx / distance;
+                        double ny = dy / distance;
+
+                        double v1n = ballA.VX * nx + ballA.VY * ny;
+                        double v2n = ballB.VX * nx + ballB.VY * ny;
+
+                        double v1t = -ny * ballA.VX + nx * ballA.VY;
+                        double v2t = -ny * ballB.VX + nx * ballB.VY;
+
+                        double newV1n = v2n;
+                        double newV2n = v1n;
+
+                        double v1x = newV1n * nx - v1t * ny;
+                        double v1y = newV1n * ny + v1t * nx;
+                        double v2x = newV2n * nx - v2t * ny;
+                        double v2y = newV2n * ny + v2t * nx;
+
+                        ballA.SetVelocity(v1x, v1y);
+                        ballB.SetVelocity(v2x, v2y);
+                    }
+                }
+            }
         }
     }
 }

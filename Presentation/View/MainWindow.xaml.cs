@@ -6,56 +6,69 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using TPW.Data;
 using TPW.Logic;
+using TPW.Presentation.Model;
 using TPW.Presentation.ViewModel;
 
-namespace TPW.Presentation.View
+namespace TPW.Presentation
 {
     public partial class MainWindow : Window
     {
-        private BallViewModel _viewModel;
-        private DispatcherTimer _timer;
-        private IBallLogic _logic;
-
-        private double CanvasWidth => BallCanvas.ActualWidth;
-        private double CanvasHeight => BallCanvas.ActualHeight;
+        private readonly BallViewModel _viewModel;
+        private readonly IBallLogic _logic;
+        private readonly DispatcherTimer _timer;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            IBallFactory factory = new BallFactory();
+            _logic = new BallLogic(factory);
+            _logic.CreateBalls(10, 800, 600);
+
+            _viewModel = new BallViewModel(_logic);
+            DataContext = _viewModel;
+
+            foreach (var ball in _logic.Balls)
+            {
+                ball.Start();
+            }
+
+            _timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(16)
+            };
+            _timer.Tick += Timer_Tick;
+            _timer.Start();
         }
 
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
-            if (int.TryParse(BallCountTextBox.Text, out int count) && count > 0)
+            if (int.TryParse(BallCountBox.Text, out int count) && count > 0)
             {
-                _logic = new BallLogic(new BallFactory());
-                _logic.CreateBalls(count, CanvasWidth, CanvasHeight);
-                _viewModel = new BallViewModel(_logic);
+                canvas.Children.Clear();
+                _logic.CreateBalls(count, canvas.ActualWidth, canvas.ActualHeight);
+                _logic.UpdateBounds(canvas.ActualWidth, canvas.ActualHeight);
 
-                _timer = new DispatcherTimer
+                foreach (var ball in _logic.Balls)
                 {
-                    Interval = TimeSpan.FromMilliseconds(30)
-                };
-                _timer.Tick += Timer_Tick;
-                _timer.Start();
-            }
-            else
-            {
-                MessageBox.Show("Podaj poprawną liczbę kulek!", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ball.Start();
+                }
+
+                _viewModel.RefreshBalls();
             }
         }
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            _viewModel.Update(0.03);
+            _logic.Update();
             RenderBalls();
         }
 
         private void RenderBalls()
         {
-            BallCanvas.Children.Clear();
+            canvas.Children.Clear();
 
-            foreach (var ball in _viewModel.Balls)
+            foreach (BallModel ball in _viewModel.Balls)
             {
                 var ellipse = new Ellipse
                 {
@@ -63,9 +76,20 @@ namespace TPW.Presentation.View
                     Height = ball.Radius * 2,
                     Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(ball.Color))
                 };
+
                 Canvas.SetLeft(ellipse, ball.X - ball.Radius);
                 Canvas.SetTop(ellipse, ball.Y - ball.Radius);
-                BallCanvas.Children.Add(ellipse);
+                canvas.Children.Add(ellipse);
+            }
+        }
+
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+
+            if (_logic != null && canvas != null)
+            {
+                _logic.UpdateBounds(canvas.ActualWidth, canvas.ActualHeight);
             }
         }
     }

@@ -7,34 +7,37 @@ namespace TPW.Presentation.ViewModel
 {
     public class BallViewModel
     {
-        public ObservableCollection<BallModel> Balls { get; private set; } = new();
-
+        public ObservableCollection<BallModel> Balls { get; } = new();
         private readonly IBallLogic _logic;
 
         public BallViewModel(IBallLogic logic)
         {
             _logic = logic;
+            RefreshBalls();
+        }
+
+        public void RefreshBalls()
+        {
+            Balls.Clear();
+
             foreach (var ball in _logic.Balls)
             {
-                Balls.Add(new BallModel
+                var model = new BallModel
                 {
                     X = ball.X,
                     Y = ball.Y,
                     Radius = ball.Radius,
                     Color = ball.Color
-                });
-            }
-        }
+                };
 
-        public void Update(double deltaTime)
-        {
-            _logic.Update(deltaTime);
-            int index = 0;
-            foreach (var logicBall in _logic.Balls)
-            {
-                Balls[index].X = logicBall.X;
-                Balls[index].Y = logicBall.Y;
-                index++;
+                ball.PositionChanged += (s, e) =>
+                {
+                    var (x, y) = ball.GetPosition();
+                    model.X = x;
+                    model.Y = y;
+                };
+
+                Balls.Add(model);
             }
         }
     }

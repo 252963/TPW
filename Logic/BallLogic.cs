@@ -20,9 +20,11 @@ namespace TPW.Logic
 
         public void CreateBalls(int count, double width, double height)
         {
+            _balls.Clear();
             _width = width;
             _height = height;
             var random = new Random();
+
             for (int i = 0; i < count; i++)
             {
                 double radius = 10;
@@ -34,46 +36,51 @@ namespace TPW.Logic
                     random.NextDouble() * 200 - 100,
                     random.NextDouble() * 200 - 100
                 );
+
                 _balls.Add(ball);
             }
         }
 
+        public void Update()
+        {
+            Update(0.016);
+        }
+
         public void Update(double deltaTime)
         {
-            foreach (var ball in _balls)
-            {
-                ball.X += ball.VX * deltaTime;
-                ball.Y += ball.VY * deltaTime;
-            }
-
             HandleWallCollisions();
             HandleBallCollisions();
+        }
+
+        public void UpdateBounds(double width, double height)
+        {
+            _width = width;
+            _height = height;
         }
 
         private void HandleWallCollisions()
         {
             foreach (var ball in _balls)
             {
-                if (ball.X - ball.Radius < 0)
+                var (x, y) = ball.GetPosition();
+                var (vx, vy) = ball.GetVelocity();
+
+                if (x - ball.Radius < 0)
                 {
-                    ball.X = ball.Radius;
-                    ball.VX *= -1;
+                    ball.SetVelocity(-vx, vy);
                 }
-                else if (ball.X + ball.Radius > _width)
+                else if (x + ball.Radius > _width)
                 {
-                    ball.X = _width - ball.Radius;
-                    ball.VX *= -1;
+                    ball.SetVelocity(-vx, vy);
                 }
 
-                if (ball.Y - ball.Radius < 0)
+                if (y - ball.Radius < 0)
                 {
-                    ball.Y = ball.Radius;
-                    ball.VY *= -1;
+                    ball.SetVelocity(vx, -vy);
                 }
-                else if (ball.Y + ball.Radius > _height)
+                else if (y + ball.Radius > _height)
                 {
-                    ball.Y = _height - ball.Radius;
-                    ball.VY *= -1;
+                    ball.SetVelocity(vx, -vy);
                 }
             }
         }
@@ -86,19 +93,25 @@ namespace TPW.Logic
                 {
                     var b1 = _balls[i];
                     var b2 = _balls[j];
-                    double dx = b2.X - b1.X;
-                    double dy = b2.Y - b1.Y;
+
+                    var (x1, y1) = b1.GetPosition();
+                    var (x2, y2) = b2.GetPosition();
+
+                    double dx = x2 - x1;
+                    double dy = y2 - y1;
                     double distance = Math.Sqrt(dx * dx + dy * dy);
+                    double minDist = b1.Radius + b2.Radius;
 
-                    if (distance < b1.Radius + b2.Radius && distance > 0)
+                    if (distance < minDist && distance > 0)
                     {
+                        var (vx1, vy1) = b1.GetVelocity();
+                        var (vx2, vy2) = b2.GetVelocity();
+
                         double angle = Math.Atan2(dy, dx);
-
-                        double speed1 = Math.Sqrt(b1.VX * b1.VX + b1.VY * b1.VY);
-                        double speed2 = Math.Sqrt(b2.VX * b2.VX + b2.VY * b2.VY);
-
-                        double direction1 = Math.Atan2(b1.VY, b1.VX);
-                        double direction2 = Math.Atan2(b2.VY, b2.VX);
+                        double speed1 = Math.Sqrt(vx1 * vx1 + vy1 * vy1);
+                        double speed2 = Math.Sqrt(vx2 * vx2 + vy2 * vy2);
+                        double direction1 = Math.Atan2(vy1, vx1);
+                        double direction2 = Math.Atan2(vy2, vx2);
 
                         double newVx1 = speed1 * Math.Cos(direction1 - angle);
                         double newVy1 = speed1 * Math.Sin(direction1 - angle);
@@ -108,24 +121,23 @@ namespace TPW.Logic
                         double finalVx1 = newVx2;
                         double finalVx2 = newVx1;
 
-                        b1.VX = Math.Cos(angle) * finalVx1 + Math.Cos(angle + Math.PI / 2) * newVy1;
-                        b1.VY = Math.Sin(angle) * finalVx1 + Math.Sin(angle + Math.PI / 2) * newVy1;
-                        b2.VX = Math.Cos(angle) * finalVx2 + Math.Cos(angle + Math.PI / 2) * newVy2;
-                        b2.VY = Math.Sin(angle) * finalVx2 + Math.Sin(angle + Math.PI / 2) * newVy2;
+                        double vx1Final = Math.Cos(angle) * finalVx1 + Math.Cos(angle + Math.PI / 2) * newVy1;
+                        double vy1Final = Math.Sin(angle) * finalVx1 + Math.Sin(angle + Math.PI / 2) * newVy1;
+                        double vx2Final = Math.Cos(angle) * finalVx2 + Math.Cos(angle + Math.PI / 2) * newVy2;
+                        double vy2Final = Math.Sin(angle) * finalVx2 + Math.Sin(angle + Math.PI / 2) * newVy2;
 
-                        // 🔥 Naprawa: rozdzielenie pozycji po kolizji
-                        double overlap = 0.5 * (b1.Radius + b2.Radius - distance);
+                        b1.SetVelocity(vx1Final, vy1Final);
+                        b2.SetVelocity(vx2Final, vy2Final);
+
+                        double overlap = 0.5 * (minDist - distance);
                         double offsetX = overlap * (dx / distance);
                         double offsetY = overlap * (dy / distance);
 
-                        b1.X -= offsetX;
-                        b1.Y -= offsetY;
-                        b2.X += offsetX;
-                        b2.Y += offsetY;
+                        b1.ShiftPosition(-offsetX, -offsetY);
+                        b2.ShiftPosition(offsetX, offsetY);
                     }
                 }
             }
         }
-
     }
 }
