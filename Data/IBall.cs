@@ -20,5 +20,7 @@ namespace TPW.Data
         void ShiftPosition(double dx, double dy);
 
         event EventHandler? PositionChanged;
+
+        object GetLock();
     }
 }

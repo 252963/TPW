@@ -38,31 +38,28 @@ namespace TPW.Data
 
             _movementTask = Task.Run(async () =>
             {
-                const int intervalMs = 16;
-                double deltaTime = intervalMs / 1000.0;
-
                 while (!token.IsCancellationRequested)
                 {
-                    lock (_lock)
-                    {
-                        X += VX * deltaTime;
-                        Y += VY * deltaTime;
-                        PositionChanged?.Invoke(this, EventArgs.Empty);
-                    }
-
-                    await Task.Delay(intervalMs, token);
+                    ShiftPosition(VX, VY);
+                    await Task.Delay(16, token);
                 }
             }, token);
         }
 
         public void Stop()
         {
-            if (_cts == null) return;
-            _cts.Cancel();
-            try { _movementTask?.Wait(); } catch (AggregateException) { }
-            _cts.Dispose();
+            _cts?.Cancel();
             _movementTask = null;
-            _cts = null;
+        }
+
+        public void ShiftPosition(double dx, double dy)
+        {
+            lock (_lock)
+            {
+                X += dx;
+                Y += dy;
+                PositionChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         public (double x, double y) GetPosition()
@@ -89,15 +86,9 @@ namespace TPW.Data
                 VY = vy;
             }
         }
-
-        public void ShiftPosition(double dx, double dy)
+        public object GetLock()
         {
-            lock (_lock)
-            {
-                X += dx;
-                Y += dy;
-                PositionChanged?.Invoke(this, EventArgs.Empty);
-            }
+            return _lock;
         }
     }
 }

@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Windows.Threading;
 using TPW.Data;
 using TPW.Logic;
 using TPW.Presentation.Model;
@@ -13,9 +12,8 @@ namespace TPW.Presentation
 {
     public partial class MainWindow : Window
     {
-        private readonly BallViewModel _viewModel;
-        private readonly IBallLogic _logic;
-        private readonly DispatcherTimer _timer;
+        private BallViewModel _viewModel;
+        private IBallLogic _logic;
 
         public MainWindow()
         {
@@ -33,12 +31,7 @@ namespace TPW.Presentation
                 ball.Start();
             }
 
-            _timer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(16)
-            };
-            _timer.Tick += Timer_Tick;
-            _timer.Start();
+            CompositionTarget.Rendering += OnRendering;
         }
 
         private void StartButton_Click(object sender, RoutedEventArgs e)
@@ -46,19 +39,21 @@ namespace TPW.Presentation
             if (int.TryParse(BallCountBox.Text, out int count) && count > 0)
             {
                 canvas.Children.Clear();
+
                 _logic.CreateBalls(count, canvas.ActualWidth, canvas.ActualHeight);
                 _logic.UpdateBounds(canvas.ActualWidth, canvas.ActualHeight);
+
+                _viewModel = new BallViewModel(_logic);
+                DataContext = _viewModel;
 
                 foreach (var ball in _logic.Balls)
                 {
                     ball.Start();
                 }
-
-                _viewModel.RefreshBalls();
             }
         }
 
-        private void Timer_Tick(object sender, EventArgs e)
+        private void OnRendering(object sender, EventArgs e)
         {
             _logic.Update();
             RenderBalls();
@@ -66,6 +61,12 @@ namespace TPW.Presentation
 
         private void RenderBalls()
         {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(RenderBalls);
+                return;
+            }
+
             canvas.Children.Clear();
 
             foreach (BallModel ball in _viewModel.Balls)

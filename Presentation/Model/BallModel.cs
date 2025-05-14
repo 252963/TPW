@@ -6,8 +6,6 @@ namespace TPW.Presentation.Model
     {
         private double _x;
         private double _y;
-        public double Radius { get; set; }
-        public string Color { get; set; }
 
         public double X
         {
@@ -35,11 +33,12 @@ namespace TPW.Presentation.Model
             }
         }
 
+        public double Radius { get; set; }
+        public string Color { get; set; } = "Red";
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void OnPropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
