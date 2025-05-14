@@ -7,9 +7,10 @@ namespace TPW.Data
         double X { get; }
         double Y { get; }
         double Radius { get; }
-        string Color { get; }
         double VX { get; }
         double VY { get; }
+        string Color { get; }
+        double Mass { get; }
 
         void Start();
         void Stop();
@@ -19,8 +20,7 @@ namespace TPW.Data
         void SetVelocity(double vx, double vy);
         void ShiftPosition(double dx, double dy);
 
-        event EventHandler? PositionChanged;
-
         object GetLock();
+        event EventHandler? PositionChanged;
     }
 }

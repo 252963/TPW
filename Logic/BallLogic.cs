@@ -27,7 +27,7 @@ namespace TPW.Logic
 
             for (int i = 0; i < count; i++)
             {
-                double radius = 10;
+                double radius = 10 + random.NextDouble() * 20;
                 var ball = _factory.Create(
                     random.NextDouble() * (width - 2 * radius) + radius,
                     random.NextDouble() * (height - 2 * radius) + radius,
@@ -105,7 +105,7 @@ namespace TPW.Logic
                     var b1 = _balls[i];
                     var b2 = _balls[j];
 
-                    // Unikamy deadlocków: zawsze b1, potem b2
+                    // Locki w stałej kolejności dla bezpieczeństwa
                     var locks = new[] { b1, b2 };
                     Array.Sort(locks, (a, b) => a.GetHashCode().CompareTo(b.GetHashCode()));
 
@@ -136,8 +136,11 @@ namespace TPW.Logic
                                 double newVx2 = speed2 * Math.Cos(direction2 - angle);
                                 double newVy2 = speed2 * Math.Sin(direction2 - angle);
 
-                                double finalVx1 = newVx2;
-                                double finalVx2 = newVx1;
+                                double m1 = b1.Mass;
+                                double m2 = b2.Mass;
+
+                                double finalVx1 = (newVx1 * (m1 - m2) + 2 * m2 * newVx2) / (m1 + m2);
+                                double finalVx2 = (newVx2 * (m2 - m1) + 2 * m1 * newVx1) / (m1 + m2);
 
                                 double vx1Final = Math.Cos(angle) * finalVx1 + Math.Cos(angle + Math.PI / 2) * newVy1;
                                 double vy1Final = Math.Sin(angle) * finalVx1 + Math.Sin(angle + Math.PI / 2) * newVy1;

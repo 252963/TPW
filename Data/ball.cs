@@ -17,6 +17,8 @@ namespace TPW.Data
         public double VX { get; private set; }
         public double VY { get; private set; }
 
+        public double Mass => Math.PI * Radius * Radius;
+
         public event EventHandler? PositionChanged;
 
         public Ball(double x, double y, double radius, string color, double vx, double vy)
@@ -58,8 +60,8 @@ namespace TPW.Data
             {
                 X += dx;
                 Y += dy;
-                PositionChanged?.Invoke(this, EventArgs.Empty);
             }
+            PositionChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public (double x, double y) GetPosition()
@@ -86,6 +88,7 @@ namespace TPW.Data
                 VY = vy;
             }
         }
+
         public object GetLock()
         {
             return _lock;
