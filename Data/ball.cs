@@ -7,11 +7,14 @@ namespace TPW.Data
     public class Ball : IBall
     {
         private readonly object _lock = new();
+        private readonly DiagnosticLogger? _logger;
         private CancellationTokenSource? _cts;
         private Task? _movementTask;
 
-        public double X { get; private set; }
-        public double Y { get; private set; }
+        private double _x, _y;
+
+        public double X { get { lock (_lock) { return _x; } } }
+        public double Y { get { lock (_lock) { return _y; } } }
         public double Radius { get; }
         public string Color { get; }
         public double VX { get; private set; }
@@ -21,14 +24,15 @@ namespace TPW.Data
 
         public event EventHandler? PositionChanged;
 
-        public Ball(double x, double y, double radius, string color, double vx, double vy)
+        public Ball(double x, double y, double radius, string color, double vx, double vy, DiagnosticLogger? logger = null)
         {
-            X = x;
-            Y = y;
+            _x = x;
+            _y = y;
             Radius = radius;
             Color = color;
             VX = vx;
             VY = vy;
+            _logger = logger;
         }
 
         public void Start()
@@ -43,7 +47,7 @@ namespace TPW.Data
                 while (!token.IsCancellationRequested)
                 {
                     ShiftPosition(VX, VY);
-                    await Task.Delay(16, token);
+                    await Task.Delay(16, token); // 60 FPS
                 }
             }, token);
         }
@@ -58,8 +62,9 @@ namespace TPW.Data
         {
             lock (_lock)
             {
-                X += dx;
-                Y += dy;
+                _x += dx;
+                _y += dy;
+                _logger?.Log($"Ball moved to ({_x:F2}, {_y:F2})");
             }
             PositionChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -68,7 +73,7 @@ namespace TPW.Data
         {
             lock (_lock)
             {
-                return (X, Y);
+                return (_x, _y);
             }
         }
 
@@ -86,6 +91,7 @@ namespace TPW.Data
             {
                 VX = vx;
                 VY = vy;
+                _logger?.Log($"Velocity set to ({VX:F2}, {VY:F2})");
             }
         }
 
