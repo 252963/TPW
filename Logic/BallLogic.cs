@@ -8,12 +8,14 @@ namespace TPW.Logic
     {
         private readonly List<IBall> _balls = new();
         private readonly IBallFactory _factory;
+        private readonly DiagnosticLogger _logger;
         private double _width;
         private double _height;
 
-        public BallLogic(IBallFactory factory)
+        public BallLogic(IBallFactory factory, DiagnosticLogger logger)
         {
             _factory = factory;
+            _logger = logger;
         }
 
         public IEnumerable<IBall> Balls => _balls;
@@ -105,57 +107,46 @@ namespace TPW.Logic
                     var b1 = _balls[i];
                     var b2 = _balls[j];
 
-                    // Locki w stałej kolejności dla bezpieczeństwa
-                    var locks = new[] { b1, b2 };
-                    Array.Sort(locks, (a, b) => a.GetHashCode().CompareTo(b.GetHashCode()));
-
-                    lock (locks[0].GetLock())
-                        lock (locks[1].GetLock())
+                    lock (b1.GetLock())
+                        lock (b2.GetLock())
                         {
-                            var (x1, y1) = b1.GetPosition();
-                            var (x2, y2) = b2.GetPosition();
-
-                            double dx = x2 - x1;
-                            double dy = y2 - y1;
+                            double dx = b2.X - b1.X;
+                            double dy = b2.Y - b1.Y;
                             double distance = Math.Sqrt(dx * dx + dy * dy);
                             double minDist = b1.Radius + b2.Radius;
 
-                            if (distance < minDist && distance > 0)
+                            if (distance < minDist && distance > 0.0001)
                             {
-                                var (vx1, vy1) = b1.GetVelocity();
-                                var (vx2, vy2) = b2.GetVelocity();
+                                // Środek kolizji
+                                double collisionX = (b1.X + b2.X) / 2;
+                                double collisionY = (b1.Y + b2.Y) / 2;
+                                _logger.Log($"Collision detected between ball {i} and ball {j} at point ({collisionX:F2}, {collisionY:F2})");
 
-                                double angle = Math.Atan2(dy, dx);
-                                double speed1 = Math.Sqrt(vx1 * vx1 + vy1 * vy1);
-                                double speed2 = Math.Sqrt(vx2 * vx2 + vy2 * vy2);
-                                double direction1 = Math.Atan2(vy1, vx1);
-                                double direction2 = Math.Atan2(vy2, vx2);
+                                double overlap = 0.5 * (minDist - distance);
+                                double ox = overlap * dx / distance;
+                                double oy = overlap * dy / distance;
 
-                                double newVx1 = speed1 * Math.Cos(direction1 - angle);
-                                double newVy1 = speed1 * Math.Sin(direction1 - angle);
-                                double newVx2 = speed2 * Math.Cos(direction2 - angle);
-                                double newVy2 = speed2 * Math.Sin(direction2 - angle);
+                                b1.ShiftPosition(-ox, -oy);
+                                b2.ShiftPosition(ox, oy);
+
+                                var (v1x, v1y) = b1.GetVelocity();
+                                var (v2x, v2y) = b2.GetVelocity();
 
                                 double m1 = b1.Mass;
                                 double m2 = b2.Mass;
 
-                                double finalVx1 = (newVx1 * (m1 - m2) + 2 * m2 * newVx2) / (m1 + m2);
-                                double finalVx2 = (newVx2 * (m2 - m1) + 2 * m1 * newVx1) / (m1 + m2);
+                                double nx = dx / distance;
+                                double ny = dy / distance;
 
-                                double vx1Final = Math.Cos(angle) * finalVx1 + Math.Cos(angle + Math.PI / 2) * newVy1;
-                                double vy1Final = Math.Sin(angle) * finalVx1 + Math.Sin(angle + Math.PI / 2) * newVy1;
-                                double vx2Final = Math.Cos(angle) * finalVx2 + Math.Cos(angle + Math.PI / 2) * newVy2;
-                                double vy2Final = Math.Sin(angle) * finalVx2 + Math.Sin(angle + Math.PI / 2) * newVy2;
+                                double p = 2 * (v1x * nx + v1y * ny - v2x * nx - v2y * ny) / (m1 + m2);
 
-                                b1.SetVelocity(vx1Final, vy1Final);
-                                b2.SetVelocity(vx2Final, vy2Final);
+                                v1x -= p * m2 * nx;
+                                v1y -= p * m2 * ny;
+                                v2x += p * m1 * nx;
+                                v2y += p * m1 * ny;
 
-                                double overlap = 0.5 * (minDist - distance);
-                                double offsetX = overlap * (dx / distance);
-                                double offsetY = overlap * (dy / distance);
-
-                                b1.ShiftPosition(-offsetX, -offsetY);
-                                b2.ShiftPosition(offsetX, offsetY);
+                                b1.SetVelocity(v1x, v1y);
+                                b2.SetVelocity(v2x, v2y);
                             }
                         }
                 }

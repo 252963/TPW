@@ -7,6 +7,7 @@ using TPW.Data;
 using TPW.Logic;
 using TPW.Presentation.Model;
 using TPW.Presentation.ViewModel;
+using System.IO;
 
 namespace TPW.Presentation
 {
@@ -19,8 +20,15 @@ namespace TPW.Presentation
         {
             InitializeComponent();
 
-            IBallFactory factory = new BallFactory();
-            _logic = new BallLogic(factory);
+            string logDirectory = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+            Directory.CreateDirectory(logDirectory);
+
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string logPath = System.IO.Path.Combine(logDirectory, $"log_{timestamp}.txt");
+
+            var logger = new DiagnosticLogger(logPath);
+            IBallFactory factory = new BallFactory(logger);
+            _logic = new BallLogic(factory, logger);
             _logic.CreateBalls(10, 800, 600);
 
             _viewModel = new BallViewModel(_logic);
@@ -40,6 +48,15 @@ namespace TPW.Presentation
             {
                 canvas.Children.Clear();
 
+                string logDirectory = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+                Directory.CreateDirectory(logDirectory);
+
+                string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                string logPath = System.IO.Path.Combine(logDirectory, $"log_{timestamp}.txt");
+
+                var logger = new DiagnosticLogger(logPath);
+                IBallFactory factory = new BallFactory(logger);
+                _logic = new BallLogic(factory, logger);
                 _logic.CreateBalls(count, canvas.ActualWidth, canvas.ActualHeight);
                 _logic.UpdateBounds(canvas.ActualWidth, canvas.ActualHeight);
 

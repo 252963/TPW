@@ -64,7 +64,7 @@ namespace TPW.Data
             {
                 _x += dx;
                 _y += dy;
-                _logger?.Log($"Ball moved to ({_x:F2}, {_y:F2})");
+              //  _logger?.Log($"Ball moved to ({_x:F2}, {_y:F2})");
             }
             PositionChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -91,7 +91,7 @@ namespace TPW.Data
             {
                 VX = vx;
                 VY = vy;
-                _logger?.Log($"Velocity set to ({VX:F2}, {VY:F2})");
+              //  _logger?.Log($"Velocity set to ({VX:F2}, {VY:F2})");
             }
         }
 
